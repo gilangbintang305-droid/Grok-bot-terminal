@@ -1,18 +1,20 @@
 name: Build APK
 on:
   push:
-    branches: [ main master ]
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout kode
+      - name: Ambil kode
         uses: actions/checkout@v4
 
-      - name: Lihat daftar file
-        run: ls -la  # ➡️ Cek apakah file HTML ada
+      - name: Lihat isi folder
+        run: |
+          ls -la
+          ls -la public/
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -25,22 +27,14 @@ jobs:
           java-version: 17
           distribution: 'temurin'
 
-      - name: Inisialisasi proyek
+      - name: Siapkan proyek
         run: |
           npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npm install @capacitor/cli @capacitor/core @capacitor/android
 
-      # ✅ KUNCI: Buat folder 'public' & pindahkan semua file web ke sana
-      - name: Siapkan folder web
+      - name: Konfigurasi & Tambah Android
         run: |
-          mkdir -p public
-          if [ -f index.html ]; then mv *.html *.css *.js public/ 2>/dev/null || true; fi
-          ls -la public/
-
-      # ✅ Konfigurasi otomatis — TIDAK PERLU file capacitor.config.json
-      - name: Inisialisasi Capacitor
-        run: |
-          npx cap init "Grok Bot" com.grokbot.terminal --web-dir=public
+          npx cap init "Grok Bot" com.grokbot.terminal --web-dir=public --force
           npx cap add android
           npx cap sync
 
@@ -50,7 +44,7 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Simpan APK
         uses: actions/upload-artifact@v4
         with:
           name: Grok-Bot-APK
