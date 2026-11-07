@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grok Bot Terminal</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo-section">
+                <div class="avatar"></div>
+                <div>
+                    <h1>Grok Bot Terminal</h1>
+                    <p class="status">● running · 04:05:41</p>
+                </div>
+            </div>
+            <div class="balance-box">
+                <p class="label">Balance</p>
+                <h2>$903.91</h2>
+                <p class="sub">started at $1200 · 25 trades</p>
+            </div>
+        </header>
+
+        <!-- Agents Grid -->
+        <section class="agents-grid">
+            <div class="agent-card scout">
+                <h3>🔍 SCOUT</h3>
+                <p>finds fresh Solana pairs</p>
+                <div class="stats">818 seen · <span>NEW</span></div>
+            </div>
+
+            <div class="agent-card filter">
+                <h3>⚡ FILTER</h3>
+                <p>8 hard rules · one fail = killed</p>
+                <div class="stats">746 killed</div>
+            </div>
+
+            <div class="agent-card analyst">
+                <h3>📊 ANALYST</h3>
+                <p>scores what's left; 0-100</p>
+                <div class="stats">72 scored</div>
+            </div>
+
+            <div class="agent-card executor">
+                <h3>▶️ EXECUTOR</h3>
+                <p>places the trades</p>
+                <div class="stats">29 trades</div>
+            </div>
+
+            <div class="agent-card risk">
+                <h3>🛡️ RISK</h3>
+                <p>stop -6% set before entry</p>
+                <div class="stats">27 stops</div>
+            </div>
+
+            <div class="agent-card logger">
+                <h3>📝 LOGGER</h3>
+                <p>writes everything down</p>
+                <div class="stats">#913</div>
+            </div>
+        </section>
+
+        <!-- Score Card -->
+        <section class="score-section">
+            <div class="score-card">
+                <p class="label">ANALYST · SCORE</p>
+                <div class="score-circle">78</div>
+                <p class="note">70 → 79 → handoff to EXECUTOR</p>
+            </div>
+
+            <div class="trade-card">
+                <p class="token">$ZORBI</p>
+                <p class="trade-status">OPEN · STOP ARMED</p>
+                <p class="profit">+2.8%</p>
+            </div>
+        </section>
+
+        <!-- Stats Footer -->
+        <section class="stats-footer">
+            <div class="stat-row"><span>Pairs scanned</span><strong>818</strong></div>
+            <div class="stat-row"><span>Killed by filter</span><strong>746</strong></div>
+            <div class="stat-row"><span>Scored</span><strong>72</strong></div>
+            <div class="stat-row"><span>Trades taken</span><strong>29</strong></div>
+            <div class="stat-row"><span>Best trade</span><strong>+$157.70</strong></div>
+        </section>
+    </div>
+</body>
+</html>
