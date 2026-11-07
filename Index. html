@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -21,7 +22,7 @@
                 <p class="label">Balance</p>
                 <h2>$903.91</h2>
                 <p class="sub">started at $1200 · 25 trades</p>
-            </div>yang
+            </div>
         </header>
 
         <!-- Agents Grid -->
@@ -87,8 +88,7 @@
             <div class="stat-row"><span>Best trade</span><strong>+$157.70</strong></div>
         </section>
     </div>
-</body>
-</html>
+
     <script src="app.js"></script>
 </body>
 </html>
