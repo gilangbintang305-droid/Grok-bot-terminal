@@ -25,9 +25,13 @@ jobs:
       - name: Pasang dependensi
         run: npm install
 
+      - name: Hapus folder android lama (jika ada)
+        run: rm -rf android
+
       - name: Inisialisasi Capacitor
         run: |
-          npx cap add android || true
+          npx cap init "Grok Bot Terminal" com.grokbot.terminal --web-dir=.
+          npx cap add android
           npx cap sync
 
       - name: Build APK
