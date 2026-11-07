@@ -1,8 +1,0 @@
-{
-  "appId": "com.grokbot.terminal",
-  "appName": "Grok Bot Terminal",
-  "webDir": ".",
-  "server": {
-    "androidScheme": "https"
-  }
-}
