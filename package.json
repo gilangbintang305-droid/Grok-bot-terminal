@@ -1,0 +1,17 @@
+{
+  "name": "grok-bot-terminal",
+  "version": "1.0.0",
+  "description": "Grok Bot Terminal UI",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "build": "echo 'Build selesai'"
+  },
+  "dependencies": {
+    "@capacitor/core": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/android": "^6.0.0"
+  }
+}
