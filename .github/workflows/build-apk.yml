@@ -27,8 +27,7 @@ jobs:
 
       - name: Inisialisasi Capacitor
         run: |
-          npx cap init "Grok Bot Terminal" com.grokbot.terminal --web-dir=. || true
-          npx cap add android
+          npx cap add android || true
           npx cap sync
 
       - name: Build APK
