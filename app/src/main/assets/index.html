@@ -92,4 +92,4 @@ function render(){const eq=equity(),w=S.wins,l=S.losses,up=Math.floor((Date.now(
  $('stats').innerHTML=row('pair dipindai',S.scanned)+row('dibunuh Filter',S.killed)+row('diskor Analyst',S.scored)+row('trade',S.trades)+row('menang / kalah',w+' W / '+l+' L')+row('rugi terburuk',usd(S.worst),'r')+row('untung terbaik',usd(S.best),'g');
  $('log').textContent=S.log.join('\n')||'$ tail -f night.log';$('tg').textContent=run?'Pause':'Start'}
 setInterval(cycle,20000);setInterval(render,1000);cycle();render();
-</script></body></html>
+<script src="live.js"></script>
