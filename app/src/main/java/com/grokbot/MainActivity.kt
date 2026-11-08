@@ -85,3 +85,4 @@ class MainActivity : Activity() {
         setContentView(web)
     }
 }
+web.webChromeClient = android.webkit.WebChromeClient()
