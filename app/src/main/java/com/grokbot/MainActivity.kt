@@ -82,7 +82,7 @@ class MainActivity : Activity() {
         web.settings.domStorageEnabled = true
         web.addJavascriptInterface(Bridge(), "Android")
         web.loadUrl("file:///android_asset/index.html")
-        setContentView(web)
+        web.webChromeClient = android.webkit.WebChromeClient()
     }
 }
-web.webChromeClient = android.webkit.WebChromeClient()
+
