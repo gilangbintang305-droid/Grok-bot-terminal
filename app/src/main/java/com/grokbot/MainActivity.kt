@@ -5,6 +5,7 @@ import android.app.Activity
 import android.os.Bundle
 import android.view.WindowManager
 import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
 import android.webkit.WebView
 import org.json.JSONArray
 import org.json.JSONObject
@@ -80,9 +81,9 @@ class MainActivity : Activity() {
         web = WebView(this)
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
+        web.webChromeClient = WebChromeClient()
         web.addJavascriptInterface(Bridge(), "Android")
         web.loadUrl("file:///android_asset/index.html")
-        web.webChromeClient = android.webkit.WebChromeClient()
+        setContentView(web)
     }
 }
-
