@@ -1,0 +1,95 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grok Bot Terminal</title>
+<style>
+:root{--bg:#0a0b14;--c:#12142a;--b:#23264a;--t:#e8eaff;--m:#7c82b5;--g:#34d399;--r:#f87171;--y:#fbbf24;--p:#a78bfa;--cy:#22d3ee}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:13px/1.45 ui-monospace,Menlo,monospace;padding:12px}
+h1{font:700 20px system-ui;margin:0}.top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.bal{font:700 26px system-ui;text-align:right}.sub{color:var(--m);font-size:11px}
+.card{background:var(--c);border:1px solid var(--b);border-radius:12px;padding:10px;margin-top:10px}
+.card h3{margin:0 0 6px;font-size:11px;letter-spacing:.08em;color:var(--m);font-weight:600}
+.agents{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.ag{background:var(--c);border:1px solid var(--b);border-radius:10px;padding:8px}.ag b{display:block}.ag span{color:var(--m);font-size:11px}
+.tag{font-size:10px;border:1px solid currentColor;border-radius:6px;padding:0 5px;margin-left:4px}
+.g{color:var(--g)}.r{color:var(--r)}.y{color:var(--y)}.m{color:var(--m)}
+.row{display:flex;justify-content:space-between;padding:2px 0}
+.bar{height:5px;background:var(--b);border-radius:3px;margin-bottom:4px}.bar i{display:block;height:5px;border-radius:3px;background:var(--cy)}
+#log{max-height:220px;overflow:auto;font-size:11px;white-space:pre-wrap}
+button{background:var(--b);color:var(--t);border:0;border-radius:8px;padding:8px 12px;font:inherit;margin-right:6px}
+</style></head><body>
+<div class="top"><div><h1>Grok Bot Terminal</h1><div class="sub" id="up"></div><div class="sub">enam agen · hard handoff · mode <span class="y">PAPER</span></div></div>
+<div><div class="bal" id="bal"></div><div class="sub" id="balsub" style="text-align:right"></div></div></div>
+<div class="agents" id="agents"></div>
+<div class="card"><h3>FILTER · KOIN TERAKHIR</h3><div id="filt" class="m">menunggu scan…</div></div>
+<div class="card"><h3>ANALYST · SKOR 0-100</h3><div id="score" class="m">belum ada</div></div>
+<div class="card"><h3>EXECUTOR + RISK · POSISI</h3><div id="pos" class="m">tidak ada posisi</div></div>
+<div class="card"><h3>STATISTIK</h3><div id="stats"></div></div>
+<div class="card"><h3>LOGGER</h3><div id="log"></div>
+<div style="margin-top:8px"><button onclick="run=!run;render()" id="tg"></button><button onclick="if(confirm('Reset semua data?')){S=fresh();seen={};save();render()}">Reset</button></div>
+<div class="sub" style="margin-top:8px">Simulasi dengan data pasar asli. Fee+slippage diasumsikan 1% per sisi. Hasil simulasi bukan jaminan hasil nyata; bukan nasihat keuangan.</div></div>
+<script>
+const DS='https://api.dexscreener.com/',RPC='https://api.mainnet-beta.solana.com';
+const START=120,SIZE=0.08,MAXPOS=3,STOP=0.06,TRAIL_ON=0.12,TRAIL=0.06,FEE=0.01,PASS=70;
+const native=typeof Android!=='undefined';let cbid=0,cbs={};
+window.__cb=(id,t)=>{const f=cbs[id];delete cbs[id];if(f)f(t)};
+function http(url,body){return new Promise(res=>{const done=t=>{try{res(JSON.parse(t))}catch(e){res(null)}};
+ if(native){const id=++cbid;cbs[id]=done;Android.http(id,url,body||'')}
+ else fetch(url,body?{method:'POST',headers:{'Content-Type':'application/json'},body}:{}).then(r=>r.text()).then(done).catch(()=>done(''))})}
+const fresh=()=>({cash:START,pos:[],wins:0,losses:0,scanned:0,killed:0,scored:0,trades:0,best:0,worst:0,log:[],t0:Date.now(),last:null,lastScore:null});
+let S=Object.assign(fresh(),JSON.parse(localStorage.getItem('gb')||'{}')),seen={},run=true,busy=false;
+const save=()=>localStorage.setItem('gb',JSON.stringify(S));
+const clamp=(x,a=0,b=100)=>Math.max(a,Math.min(b,x));
+const $=id=>document.getElementById(id);
+const log=(k,t)=>{S.log.unshift(new Date().toTimeString().slice(0,8)+' '+k+' '+t);S.log=S.log.slice(0,60)};
+const equity=()=>S.cash+S.pos.reduce((a,p)=>a+p.units*(p.last||p.entry),0);
+const usd=n=>(n<0?'-':'')+'$'+Math.abs(n).toFixed(2);
+function pick(pairs){const m={};pairs.forEach(x=>{if(x.chainId!=='solana'||!x.baseToken)return;const a=x.baseToken.address;if(!m[a]||(x.liquidity?.usd||0)>(m[a].liquidity?.usd||0))m[a]=x});return Object.values(m)}
+const RULES=[
+ ['umur 30m–72 jam',x=>{const h=(Date.now()-x.pairCreatedAt)/36e5;return h>=0.5&&h<=72}],
+ ['mcap $300k–$20M',x=>{const m=x.marketCap||x.fdv||0;return m>=3e5&&m<=2e7}],
+ ['likuiditas ≥ $40k',x=>(x.liquidity?.usd||0)>=4e4],
+ ['volume 1j ≥ $50k',x=>(x.volume?.h1||0)>=5e4],
+ ['pump 1j ≤ 80%',x=>(x.priceChange?.h1||0)<=80],
+ ['buy/sell ≥ 0.8',x=>{const t=x.txns?.h1||{};return (t.buys||0)>=0.8*(t.sells||1)}],
+ ['mint/freeze dicabut',null]
+];
+async function mintSafe(a){const r=await http(RPC,JSON.stringify({jsonrpc:'2.0',id:1,method:'getAccountInfo',params:[a,{encoding:'jsonParsed'}]}));
+ const i=r?.result?.value?.data?.parsed?.info;if(!i)return false;return i.mintAuthority==null&&i.freezeAuthority==null}
+function score(x){const t=x.txns?.h1||{},b=t.buys||0,s=t.sells||0,pc=x.priceChange||{},liq=x.liquidity?.usd||1,mc=x.marketCap||x.fdv||1;
+ const f={momentum:clamp(50+(pc.m5||0)*3+(pc.h1||0)*0.3),'unique buyers':clamp(b/5),'buy / sell':clamp(b/((b+s)||1)*100),'liquidity / mcap':clamp(liq/mc*400),'vol / liq':clamp((x.volume?.h1||0)/liq*50)};
+ const v=Object.values(f);return{f,total:Math.round(v.reduce((a,c)=>a+c,0)/v.length)}}
+function close(p,price,why){const out=p.units*price*(1-FEE);S.cash+=out;const pnl=out-p.size;S.pos=S.pos.filter(x=>x!==p);S.trades++;
+ if(pnl>=0)S.wins++;else S.losses++;S.best=Math.max(S.best,pnl);S.worst=Math.min(S.worst,pnl);log(why,`$${p.sym} ${usd(pnl)}`)}
+function risk(p,price){p.last=price;p.peak=Math.max(p.peak,price);if(price/p.entry-1>=TRAIL_ON)p.trail=true;
+ if(p.trail&&price<=p.peak*(1-TRAIL))close(p,price,'TRAIL');else if(price<=p.entry*(1-STOP))close(p,price,'STOP')}
+function open(x,sc){const entry=+x.priceUsd;if(!entry)return;const size=Math.min(S.cash,equity()*SIZE);if(size<1)return;
+ S.pos.push({addr:x.baseToken.address,sym:x.baseToken.symbol,entry,size,units:size*(1-FEE)/entry,peak:entry,last:entry,trail:false});
+ S.cash-=size;log('ENTER',`$${x.baseToken.symbol} skor ${sc} · ${usd(size)} · stop -${STOP*100}% dipasang`)}
+async function cycle(){if(busy||!run)return;busy=true;try{
+ if(S.pos.length){const r=await http(DS+'latest/dex/tokens/'+S.pos.map(p=>p.addr).join(','));const m={};pick(r?.pairs||[]).forEach(x=>m[x.baseToken.address]=x);
+  S.pos.slice().forEach(p=>{if(m[p.addr])risk(p,+m[p.addr].priceUsd)})}
+ if(S.pos.length<MAXPOS){
+  const pr=await http(DS+'token-profiles/latest/v1');
+  const addrs=(Array.isArray(pr)?pr:[]).filter(x=>x.chainId==='solana'&&!seen[x.tokenAddress]).map(x=>x.tokenAddress).slice(0,30);
+  if(addrs.length){addrs.forEach(a=>seen[a]=1);const r=await http(DS+'latest/dex/tokens/'+addrs.join(','));
+   for(const x of pick(r?.pairs||[])){if(S.pos.length>=MAXPOS)break;S.scanned++;const sym=x.baseToken.symbol;
+    let fail=RULES.findIndex(([n,f])=>f&&!f(x));
+    if(fail<0&&!(await mintSafe(x.baseToken.address)))fail=RULES.length-1;
+    S.last={sym,fail,rows:RULES.map((r,i)=>[r[0],fail<0||i<fail?'ok':i===fail?'fail':'skip'])};
+    if(fail>=0){S.killed++;log('KILL',`$${sym} · ${RULES[fail][0]}`);continue}
+    const sc=score(x);S.scored++;S.lastScore={sym,...sc};
+    if(sc.total>=PASS)open(x,sc.total);else log('PASS',`$${sym} skor ${sc.total} < ${PASS} → dibuang`)}}}
+}catch(e){log('ERR',String(e).slice(0,60))}busy=false;save();render()}
+function render(){const eq=equity(),w=S.wins,l=S.losses,up=Math.floor((Date.now()-S.t0)/1000);
+ $('up').textContent=(run?'running':'paused')+' · '+new Date(up*1000).toISOString().substr(11,8);
+ $('bal').textContent=usd(eq);$('bal').className='bal '+(eq>=START?'g':'r');
+ $('balsub').textContent=`mulai ${usd(START)} · ${S.trades} trade · ${w} W · ${l} L`;
+ const ag=(n,d,c,t)=>`<div class="ag"><b>${n}<span class="tag ${c}">${t}</span></b><span>${d}</span></div>`;
+ $('agents').innerHTML=ag('SCOUT',`${S.scanned} dipindai`,'g','SCAN')+ag('FILTER',`${S.killed} dibunuh`,'r','CHECK')+ag('ANALYST',`${S.scored} diskor`,'p','IDLE')+ag('EXECUTOR',`${S.trades} trade · maks 8%`,'g','LIVE')+ag('RISK',`stop -6% · trail +12%`,'y','ARMED')+ag('LOGGER',`${S.log.length} baris`,'m','WRITE');
+ $('filt').innerHTML=S.last?`<b>$${S.last.sym}</b>`+S.last.rows.map(([n,s])=>`<div class="row"><span>${n}</span><span class="${s=='ok'?'g':s=='fail'?'r':'m'}">${s=='ok'?'lolos':s=='fail'?'GAGAL':'skip'}</span></div>`).join('')+`<div class="row m"><span>LP burn / top holder / dev / bundle</span><span>tidak dicek</span></div>`:'menunggu scan…';
+ $('score').innerHTML=S.lastScore?`<b>$${S.lastScore.sym}</b> · <b class="${S.lastScore.total>=PASS?'g':'r'}">${S.lastScore.total}</b>`+Object.entries(S.lastScore.f).map(([k,v])=>`<div class="row"><span>${k}</span><span>${Math.round(v)}</span></div><div class="bar"><i style="width:${v}%"></i></div>`).join(''):'belum ada';
+ $('pos').innerHTML=S.pos.length?S.pos.map(p=>{const g=(p.last/p.entry-1)*100;return `<div class="row"><b>$${p.sym}</b><span class="${g>=0?'g':'r'}">${g>=0?'+':''}${g.toFixed(1)}%</span></div><div class="row m"><span>size ${usd(p.size)} · stop -6%</span><span>${p.trail?'trailing aktif':'trail setelah +12%'}</span></div>`}).join(''):'tidak ada posisi';
+ const row=(a,b,c='')=>`<div class="row"><span class="m">${a}</span><span class="${c}">${b}</span></div>`;
+ $('stats').innerHTML=row('pair dipindai',S.scanned)+row('dibunuh Filter',S.killed)+row('diskor Analyst',S.scored)+row('trade',S.trades)+row('menang / kalah',w+' W / '+l+' L')+row('rugi terburuk',usd(S.worst),'r')+row('untung terbaik',usd(S.best),'g');
+ $('log').textContent=S.log.join('\n')||'$ tail -f night.log';$('tg').textContent=run?'Pause':'Start'}
+setInterval(cycle,20000);setInterval(render,1000);cycle();render();
+</script></body></html>
