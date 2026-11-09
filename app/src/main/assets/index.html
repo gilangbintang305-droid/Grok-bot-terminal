@@ -93,4 +93,4 @@ function render(){const eq=equity(),w=S.wins,l=S.losses,up=Math.floor((Date.now(
  $('log').textContent=S.log.join('\n')||'$ tail -f night.log';$('tg').textContent=run?'Pause':'Start'}
 setInterval(cycle,20000);setInterval(render,1000);cycle();render();
 </script>
-<script src="live.js"></script></body></html>
+<script src="live.js"></script><script src="scanner.js"></script></body></html>
