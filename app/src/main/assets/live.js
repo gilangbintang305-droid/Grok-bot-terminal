@@ -1,3 +1,4 @@
+
 (()=>{
 const SOLM='So11111111111111111111111111111111111111112',JUP='https://lite-api.jup.ag/swap/v1';
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
@@ -71,8 +72,18 @@ box.innerHTML=`<h3>WALLET · TRADING ASLI</h3>
 <div style="margin-top:8px"><button id="wt"></button><button id="wx" class="r">STOP DARURAT</button><button id="wd">Hapus kunci</button></div></div>`;
 document.querySelector('.agents').before(box);
 const $$=id=>document.getElementById(id);
+// ---- sinkron indikator mode (header + tag Executor) dengan mode asli ----
+function modeSync(){
+ const live=!!(L.on&&ADDR);
+ const hs=document.querySelector('.top .sub .y,.top .sub .r');
+ if(hs){hs.textContent=live?'LIVE':'PAPER';hs.className=live?'r':'y'}
+ const ex=document.querySelectorAll('#agents .ag')[3];
+ const tg=ex&&ex.querySelector('.tag');
+ if(tg){tg.textContent=live?'LIVE':'PAPER';tg.className='tag '+(live?'r':'y')}
+}
 function wr(){
  $$('w0').style.display=ADDR?'none':'block';$$('w1').style.display=ADDR?'block':'none';
+ modeSync();
  if(!ADDR)return;
  $$('wa').textContent=ADDR.slice(0,4)+'…'+ADDR.slice(-4);$$('wb').textContent=BAL.toFixed(4)+' SOL';
  $$('wm').textContent=L.on?'LIVE (uang asli)':'PAPER';$$('wm').className=L.on?'r':'y';
@@ -87,5 +98,5 @@ $$('wd').onclick=()=>{if(confirm('Hapus kunci dari aplikasi? Posisi terbuka tida
 $$('wmax').value=L.maxSol;$$('wlim').value=L.dayLoss;
 $$('wmax').onchange=e=>{L.maxSol=Math.max(0.003,+e.target.value||0.02);lsave()};
 $$('wlim').onchange=e=>{L.dayLoss=Math.max(0,+e.target.value||0.05);lsave()};
-wr();setInterval(refBal,5000);refBal();
+wr();setInterval(refBal,5000);setInterval(modeSync,500);refBal();
 })();
