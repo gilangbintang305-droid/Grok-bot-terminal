@@ -34,7 +34,7 @@ window.__cb=(id,t)=>{const f=cbs[id];delete cbs[id];if(f)f(t)};
 function http(url,body){return new Promise(res=>{const done=t=>{try{res(JSON.parse(t))}catch(e){res(null)}};
  if(native){const id=++cbid;cbs[id]=done;Android.http(id,url,body||'')}
  else fetch(url,body?{method:'POST',headers:{'Content-Type':'application/json'},body}:{}).then(r=>r.text()).then(done).catch(()=>done(''))})}
-const fresh=()=>({cash:START,pos:[],wins:0,losses:0,scanned:0,killed:0,scored:0,trades:0,best:0,worst:0,log:[],t0:Date.now(),last:null,lastScore:null});
+const fresh=()=>({fails:{},cash:START,pos:[],wins:0,losses:0,scanned:0,killed:0,scored:0,trades:0,best:0,worst:0,log:[],t0:Date.now(),last:null,lastScore:null});
 let S=Object.assign(fresh(),JSON.parse(localStorage.getItem('gb')||'{}')),seen={},run=true,busy=false;
 const save=()=>localStorage.setItem('gb',JSON.stringify(S));
 const clamp=(x,a=0,b=100)=>Math.max(a,Math.min(b,x));
@@ -45,7 +45,7 @@ const usd=n=>(n<0?'-':'')+'$'+Math.abs(n).toFixed(2);
 function pick(pairs){const m={};pairs.forEach(x=>{if(x.chainId!=='solana'||!x.baseToken)return;const a=x.baseToken.address;if(!m[a]||(x.liquidity?.usd||0)>(m[a].liquidity?.usd||0))m[a]=x});return Object.values(m)}
 const RULES=[
  ['umur 30m–72 jam',x=>{const h=(Date.now()-x.pairCreatedAt)/36e5;return h>=0.5&&h<=72}],
- ['mcap $300k–$20M',x=>{const m=x.marketCap||x.fdv||0;return m>=3e5&&m<=2e7}],
+ ['mcap $100k–$50M',x=>{const m=x.marketCap||x.fdv||0;return m>=1e5&&m<=5e7}],
  ['likuiditas ≥ $40k',x=>(x.liquidity?.usd||0)>=4e4],
  ['volume 1j ≥ $50k',x=>(x.volume?.h1||0)>=5e4],
  ['pump 1j ≤ 80%',x=>(x.priceChange?.h1||0)<=80],
@@ -68,14 +68,14 @@ async function cycle(){if(busy||!run)return;busy=true;try{
  if(S.pos.length){const r=await http(DS+'latest/dex/tokens/'+S.pos.map(p=>p.addr).join(','));const m={};pick(r?.pairs||[]).forEach(x=>m[x.baseToken.address]=x);
   S.pos.slice().forEach(p=>{if(m[p.addr])risk(p,+m[p.addr].priceUsd)})}
  if(S.pos.length<MAXPOS){
-  const pr=await http(DS+'token-profiles/latest/v1');
-  const addrs=(Array.isArray(pr)?pr:[]).filter(x=>x.chainId==='solana'&&!seen[x.tokenAddress]).map(x=>x.tokenAddress).slice(0,30);
+  const [p1,p2]=await Promise.all([http(DS+'token-profiles/latest/v1'),http(DS+'token-boosts/top/v1')]);
+  const addrs=[...new Set([...(Array.isArray(p1)?p1:[]),...(Array.isArray(p2)?p2:[])].filter(x=>x.chainId==='solana'&&!seen[x.tokenAddress]).map(x=>x.tokenAddress))].slice(0,30);
   if(addrs.length){addrs.forEach(a=>seen[a]=1);const r=await http(DS+'latest/dex/tokens/'+addrs.join(','));
    for(const x of pick(r?.pairs||[])){if(S.pos.length>=MAXPOS)break;S.scanned++;const sym=x.baseToken.symbol;
     let fail=RULES.findIndex(([n,f])=>f&&!f(x));
     if(fail<0&&!(await mintSafe(x.baseToken.address)))fail=RULES.length-1;
     S.last={sym,fail,rows:RULES.map((r,i)=>[r[0],fail<0||i<fail?'ok':i===fail?'fail':'skip'])};
-    if(fail>=0){S.killed++;log('KILL',`$${sym} · ${RULES[fail][0]}`);continue}
+    if(fail>=0){S.killed++;const n=RULES[fail][0];S.fails[n]=(S.fails[n]||0)+1;log('KILL',`$${sym} · ${n}`);continue}
     const sc=score(x);S.scored++;S.lastScore={sym,...sc};
     if(sc.total>=PASS)open(x,sc.total);else log('PASS',`$${sym} skor ${sc.total} < ${PASS} → dibuang`)}}}
 }catch(e){log('ERR',String(e).slice(0,60))}busy=false;save();render()}
@@ -89,7 +89,7 @@ function render(){const eq=equity(),w=S.wins,l=S.losses,up=Math.floor((Date.now(
  $('score').innerHTML=S.lastScore?`<b>$${S.lastScore.sym}</b> · <b class="${S.lastScore.total>=PASS?'g':'r'}">${S.lastScore.total}</b>`+Object.entries(S.lastScore.f).map(([k,v])=>`<div class="row"><span>${k}</span><span>${Math.round(v)}</span></div><div class="bar"><i style="width:${v}%"></i></div>`).join(''):'belum ada';
  $('pos').innerHTML=S.pos.length?S.pos.map(p=>{const g=(p.last/p.entry-1)*100;return `<div class="row"><b>$${p.sym}</b><span class="${g>=0?'g':'r'}">${g>=0?'+':''}${g.toFixed(1)}%</span></div><div class="row m"><span>size ${usd(p.size)} · stop -6%</span><span>${p.trail?'trailing aktif':'trail setelah +12%'}</span></div>`}).join(''):'tidak ada posisi';
  const row=(a,b,c='')=>`<div class="row"><span class="m">${a}</span><span class="${c}">${b}</span></div>`;
- $('stats').innerHTML=row('pair dipindai',S.scanned)+row('dibunuh Filter',S.killed)+row('diskor Analyst',S.scored)+row('trade',S.trades)+row('menang / kalah',w+' W / '+l+' L')+row('rugi terburuk',usd(S.worst),'r')+row('untung terbaik',usd(S.best),'g');
+ $('stats').innerHTML=row('pair dipindai',S.scanned)+row('dibunuh Filter',S.killed)+row('diskor Analyst',S.scored)+row('trade',S.trades)+row('menang / kalah',w+' W / '+l+' L')+row('rugi terburuk',usd(S.worst),'r')+row('untung terbaik',usd(S.best),'g')+Object.entries(S.fails||{}).sort((a,b)=>b[1]-a[1]).map(([k,v])=>row('gagal: '+k,v,'r')).join('');
  $('log').textContent=S.log.join('\n')||'$ tail -f night.log';$('tg').textContent=run?'Pause':'Start'}
 setInterval(cycle,20000);setInterval(render,1000);cycle();render();
 </script>
