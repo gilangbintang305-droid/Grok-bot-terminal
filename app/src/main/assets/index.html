@@ -28,7 +28,7 @@ button{background:var(--b);color:var(--t);border:0;border-radius:8px;padding:8px
 <div class="sub" style="margin-top:8px">Simulasi dengan data pasar asli. Fee+slippage diasumsikan 1% per sisi. Hasil simulasi bukan jaminan hasil nyata; bukan nasihat keuangan.</div></div>
 <script>
 const DS='https://api.dexscreener.com/',RPC='https://api.mainnet-beta.solana.com';
-const START=120,SIZE=0.08,MAXPOS=3,STOP=0.06,TRAIL_ON=0.12,TRAIL=0.06,FEE=0.01,PASS=70;
+const START=120,SIZE=0.08,MAXPOS=3,STOP=0.06,TRAIL_ON=0.12,TRAIL=0.06,FEE=0.01,PASS=65;
 const native=typeof Android!=='undefined';let cbid=0,cbs={};
 window.__cb=(id,t)=>{const f=cbs[id];delete cbs[id];if(f)f(t)};
 function http(url,body){return new Promise(res=>{const done=t=>{try{res(JSON.parse(t))}catch(e){res(null)}};
